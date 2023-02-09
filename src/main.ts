@@ -10,7 +10,7 @@ const closeMenuButton = document.getElementById(
 const optionsForm = document.getElementById("game-settings") as HTMLFormElement;
 const timersContainer = document.getElementById("timers") as HTMLElement;
 
-let intervalID: ReturnType<typeof setInterval>;
+// let intervalID: ReturnType<typeof setInterval>;
 
 type Player = {
 	id: number;
@@ -93,7 +93,7 @@ function setupGame({
 }
 
 function createTimerButtonClickHandler(player: Player) {
-	return (ev: MouseEvent) => {
+	return () => {
 		// Check if there there are no active players
 		if (!currentPlayers.find((p) => p.active)) {
 			// There isn't an active timer right now,
