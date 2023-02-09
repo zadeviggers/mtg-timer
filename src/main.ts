@@ -21,7 +21,7 @@ type Player = {
 };
 let currentPlayers: Player[] = [];
 
-setupGame({ players: 3, playerTime: 10 });
+setupGame({ players: 3, playerTime: 600000 });
 
 openMenuButton.addEventListener("click", () => {
 	mainMenu.showModal();
