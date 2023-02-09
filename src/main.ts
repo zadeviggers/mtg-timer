@@ -10,6 +10,17 @@ const closeMenuButton = document.getElementById(
 const optionsForm = document.getElementById("game-settings") as HTMLFormElement;
 const timersContainer = document.getElementById("timers") as HTMLElement;
 
+let intervalID: ReturnType<typeof setInterval>;
+
+type Player = {
+	id: number;
+	timeRemaining: number;
+	timerButtonEl: HTMLButtonElement;
+	timeDisplayEl: HTMLElement;
+	active: boolean;
+};
+let currentPlayers: Player[] = [];
+
 setupGame({ players: 3, playerTime: 10 });
 
 openMenuButton.addEventListener("click", () => {
@@ -41,12 +52,76 @@ function setupGame({
 	players: number;
 	playerTime: number;
 }) {
+	const playerIDs = Array.from(Array(players), (_, i) => ({
+		id: i + 1,
+		timeRemaining: playerTime,
+	}));
+
 	timersContainer.innerHTML = /*html*/ `
-		${Array.from(Array(players), (_, i) => i + 1)
+		${playerIDs
 			.map(
-				(p) =>
-					/*html*/ `<div class="flex-1 min-w-[40%] bg-orange-500">Player ${p}</div>`
+				({ timeRemaining, id }) => /*html*/ `
+				<button class="relative flex items-center justify-center flex-1 min-w-[40%] bg-slate-300 data-[active]:bg-orange-500" id="player-timer-button-${id}">
+					<span class="absolute top-0 left-0">Player ${id}</span>
+					<span class="" id="player-time-display-${id}">${formatTime(
+					timeRemaining
+				)}</span>
+				</button>
+				`
 			)
 			.join("\n")}
 	`;
+
+	currentPlayers = playerIDs.map(({ id, timeRemaining }) => ({
+		id,
+		timeRemaining,
+		timerButtonEl: document.getElementById(
+			`player-timer-button-${id}`
+		) as HTMLButtonElement,
+		timeDisplayEl: document.getElementById(
+			`player-time-display-${id}`
+		) as HTMLElement,
+		active: false,
+	}));
+
+	currentPlayers.forEach((player) => {
+		player.timerButtonEl.addEventListener(
+			"click",
+			createTimerButtonClickHandler(player)
+		);
+	});
 }
+
+function createTimerButtonClickHandler(player: Player) {
+	return (ev: MouseEvent) => {
+		// Check if there there are no active players
+		if (!currentPlayers.find((p) => p.active)) {
+			// There isn't an active timer right now,
+			// so make this player the active player.
+			setActivePlayer(player);
+		} else {
+			// If there is already an active timer
+		}
+	};
+}
+
+function formatTime(ms: number): string {
+	return ms.toString();
+}
+
+function setActivePlayer(player: Player) {
+	const currentPlayersWithoutThisPlayer = currentPlayers.filter(
+		(p) => p.id !== player.id
+	);
+	currentPlayers = [
+		...currentPlayersWithoutThisPlayer,
+		{ ...player, active: true },
+	];
+	currentPlayers.forEach((p) =>
+		p.timerButtonEl.toggleAttribute("data-active", false)
+	);
+	player.timerButtonEl.toggleAttribute("data-active", true);
+	updateTimerUI();
+}
+
+function updateTimerUI() {}
