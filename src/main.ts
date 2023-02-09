@@ -45,7 +45,7 @@ function setupGame({
 		${Array.from(Array(players), (_, i) => i + 1)
 			.map(
 				(p) =>
-					/*html*/ `<div class="flex-1 min-w-[40%] ">Player ${p}</div>`
+					/*html*/ `<div class="flex-1 min-w-[40%] bg-orange-500">Player ${p}</div>`
 			)
 			.join("\n")}
 	`;
