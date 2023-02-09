@@ -105,10 +105,6 @@ function createTimerButtonClickHandler(player: Player) {
 	};
 }
 
-function formatTime(ms: number): string {
-	return ms.toString();
-}
-
 function setActivePlayer(player: Player) {
 	const currentPlayersWithoutThisPlayer = currentPlayers.filter(
 		(p) => p.id !== player.id
@@ -124,4 +120,18 @@ function setActivePlayer(player: Player) {
 	updateTimerUI();
 }
 
-function updateTimerUI() {}
+function updateTimerUI() {
+	currentPlayers.forEach((player) => {
+		player.timeDisplayEl.innerText = formatTime(
+			player.timeRemaining
+		);
+	});
+}
+
+function formatTime(ms: number): string {
+	const minutes = Math.floor(ms / 60000);
+	const seconds = (ms % 60000) / 1000;
+	return `${minutes < 10 ? "0" : ""}${minutes}:${
+		seconds < 10 ? "0" : ""
+	}${seconds.toFixed(0)}`;
+}
