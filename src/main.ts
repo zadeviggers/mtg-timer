@@ -122,6 +122,9 @@ function setupGame({
 
 function createTimerButtonClickHandler(player: Player) {
 	return () => {
+		// Don't switch turns when paused
+		if (isPaused) return;
+
 		// Check if there there are no active players
 		if (!activePlayerID) {
 			// There isn't an active timer right now,
