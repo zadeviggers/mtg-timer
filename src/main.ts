@@ -179,7 +179,9 @@ function renderLayout(players: number[], timeInMS: number): string {
 							</span>`
 							: ""
 					}
-					<span class="" id="player-time-display-${id}">${formatTime(timeInMS)}</span>
+					<span class="font-bold text-2xl" id="player-time-display-${id}">${formatTime(
+					timeInMS
+				)}</span>
 				</button>
 				`
 			)
