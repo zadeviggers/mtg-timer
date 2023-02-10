@@ -103,7 +103,7 @@ function createTimerButtonClickHandler(player: Player) {
 			// so make this player the active player.
 			setActivePlayer(player);
 		} else if (activePlayers.find((p) => p.id === player.id)) {
-			// If there is already an active timer
+			// If there is already an active timer, set the next player ID to active
 			let nextPlayerID = activePlayers[0].id + 1;
 			if (nextPlayerID > currentPlayers.length)
 				nextPlayerID = 1;
