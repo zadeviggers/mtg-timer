@@ -21,7 +21,7 @@ type Player = {
 };
 let currentPlayers: Player[] = [];
 
-setupGame({ players: 3, playerTime: 600000 });
+setupGame({ players: 4, playerTime: 600000 });
 
 openMenuButton.addEventListener("click", () => {
 	mainMenu.showModal();
@@ -61,7 +61,7 @@ function setupGame({
 		${playerIDs
 			.map(
 				({ timeRemaining, id }) => /*html*/ `
-				<button class="relative flex items-center justify-center flex-1 min-w-[40%] bg-slate-300 data-[active]:bg-orange-500" id="player-timer-button-${id}">
+				<button class="relative flex items-center justify-center flex-1 min-w-[40%] bg-slate-300 dark:bg-slate-600 data-[active]:bg-orange-500" id="player-timer-button-${id}">
 					<span class="absolute top-0 left-0">Player ${id}</span>
 					<span class="" id="player-time-display-${id}">${formatTime(
 					timeRemaining
@@ -92,25 +92,42 @@ function setupGame({
 	});
 }
 
+function getActivePlayers(): Player[] {
+	return currentPlayers.filter((p) => p.active);
+}
+
 function createTimerButtonClickHandler(player: Player) {
 	return () => {
 		// Check if there there are no active players
-		if (!currentPlayers.find((p) => p.active)) {
+		const activePlayers = getActivePlayers();
+		if (activePlayers.length === 0) {
 			// There isn't an active timer right now,
 			// so make this player the active player.
 			setActivePlayer(player);
-		} else {
+		} else if (activePlayers.find((p) => p.id === player.id)) {
 			// If there is already an active timer
+			let nextPlayerID = activePlayers[0].id + 1;
+			if (nextPlayerID > currentPlayers.length)
+				nextPlayerID = 1;
+			setActivePlayer(
+				currentPlayers.find(
+					(p) => (p.id = nextPlayerID)
+				)!
+			);
 		}
 	};
 }
 
 function setActivePlayer(player: Player) {
+	console.log(`Setting current player to ${player.id}`);
 	const currentPlayersWithoutThisPlayer = currentPlayers.filter(
 		(p) => p.id !== player.id
 	);
 	currentPlayers = [
-		...currentPlayersWithoutThisPlayer,
+		...currentPlayersWithoutThisPlayer.map((p) => ({
+			...p,
+			active: false,
+		})),
 		{ ...player, active: true },
 	];
 	currentPlayers.forEach((p) =>
