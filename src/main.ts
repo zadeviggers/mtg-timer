@@ -144,6 +144,7 @@ function updateTimerUI() {
 }
 
 function formatTime(ms: number): string {
+	// Courtesy of https://stackoverflow.com/a/21294619
 	const minutes = Math.floor(ms / 60000);
 	const seconds = (ms % 60000) / 1000;
 	return `${minutes < 10 ? "0" : ""}${minutes}:${
