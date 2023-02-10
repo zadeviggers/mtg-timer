@@ -29,7 +29,7 @@ let isPaused = false;
 
 // This layouts system means I can set it up so that the order of play goes around
 // rather than side to side and down.
-const layouts: Record<number, (timeInMS: number) => string> = {
+const layouts: Record<number, (ms: number) => string> = {
 	2: (ms) =>
 		renderLayout(
 			[
@@ -181,17 +181,18 @@ function createTimerButtonClickHandler(player: Player) {
 			pauseButton.toggleAttribute("disabled", false);
 		} else if (activePlayerID === player.id) {
 			// If there is already an active timer, set the next player ID to active
-			let nextPlayerID = activePlayerID + 1;
-			if (nextPlayerID > currentPlayers.length) {
-				nextPlayerID = 1;
-			}
-			setActivePlayer(
-				currentPlayers.find(
-					(p) => p.id === nextPlayerID
-				)!
-			);
+			nextPlayer();
 		}
 	};
+}
+
+function nextPlayer() {
+	let nextPlayerID = (activePlayerID || 0) + 1;
+	if (nextPlayerID > currentPlayers.length) {
+		const sorted = [...currentPlayers].sort((a, b) => a.id - b.id);
+		nextPlayerID = sorted[0].id;
+	}
+	setActivePlayer(currentPlayers.find((p) => p.id === nextPlayerID)!);
 }
 
 function startTicking() {
@@ -224,6 +225,11 @@ function handleTick() {
 		(p) => p.id === activePlayerID
 	)!;
 
+	if (activePlayer.timeRemaining <= 0) {
+		nextPlayer();
+		return;
+	}
+
 	activePlayer.timeRemaining -= tickInterval;
 
 	updateTimerUI();
@@ -251,11 +257,11 @@ function formatTime(ms: number): string {
 }
 
 function renderLayout(
-	players: [number, "up" | "down" | "left" | "right"][],
-	timeInMS: number
+	timers: [number, "up" | "down" | "left" | "right"][],
+	ms: number
 ): string {
 	return /*html*/ `
-		${players
+		${timers
 			.map(
 				([id, rotation]) => /*html*/ `
 				<button class="relative flex items-center justify-center flex-1 min-w-[40%] bg-slate-300 dark:bg-slate-600 data-[active]:bg-orange-500" id="player-timer-button-${id}">
@@ -275,9 +281,9 @@ function renderLayout(
 							: rotation === "left"
 							? "rotate-90"
 							: "-rotate-90"
-					}" id="player-time-display-${id}">${formatTime(
-					timeInMS
-				)}</span>
+					}" id="player-time-display-${id}">
+						${formatTime(ms)}
+					</span>
 				</button>
 				`
 			)
