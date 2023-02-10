@@ -92,14 +92,12 @@ function setupGame({
 	});
 }
 
-function getActivePlayers(): Player[] {
-	return currentPlayers.filter((p) => p.active);
-}
-
 function createTimerButtonClickHandler(player: Player) {
 	return () => {
+		// Get active players
+		const activePlayers = currentPlayers.filter((p) => p.active);
+
 		// Check if there there are no active players
-		const activePlayers = getActivePlayers();
 		if (activePlayers.length === 0) {
 			// There isn't an active timer right now,
 			// so make this player the active player.
