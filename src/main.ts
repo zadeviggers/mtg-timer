@@ -30,11 +30,56 @@ let isPaused = false;
 // This layouts system means I can set it up so that the order of play goes around
 // rather than side to side and down.
 const layouts: Record<number, (timeInMS: number) => string> = {
-	2: (ms) => renderLayout(arrayOfLength(2), ms),
-	3: (ms) => renderLayout(arrayOfLength(3), ms),
-	4: (ms) => renderLayout([1, 2, 4, 3], ms),
-	5: (ms) => renderLayout([1, 2, 5, 3, 4], ms),
-	6: (ms) => renderLayout([1, 2, 6, 3, 5, 4], ms),
+	2: (ms) =>
+		renderLayout(
+			[
+				[1, "left"],
+				[2, "right"],
+			],
+			ms
+		),
+	3: (ms) =>
+		renderLayout(
+			[
+				[1, "left"],
+				[2, "right"],
+				[3, "down"],
+			],
+			ms
+		),
+	4: (ms) =>
+		renderLayout(
+			[
+				[1, "left"],
+				[2, "right"],
+				[4, "left"],
+				[3, "right"],
+			],
+			ms
+		),
+	5: (ms) =>
+		renderLayout(
+			[
+				[1, "left"],
+				[3, "right"],
+				[2, "left"],
+				[5, "right"],
+				[4, "down"],
+			],
+			ms
+		),
+	6: (ms) =>
+		renderLayout(
+			[
+				[1, "left"],
+				[2, "right"],
+				[6, "left"],
+				[3, "right"],
+				[5, "left"],
+				[4, "right"],
+			],
+			ms
+		),
 };
 
 setupGame({ players: 4, playerTime: 600000 });
@@ -53,9 +98,7 @@ optionsForm.addEventListener("submit", (ev) => {
 	setupGame({
 		players: Number.parseInt(data.get("player-count")! as string),
 		playerTime:
-			Number.parseInt(data.get("turn-time")! as string) *
-			60 *
-			1000,
+			Number(data.get("turn-time")! as string) * 60 * 1000,
 	});
 	mainMenu.close();
 });
@@ -198,17 +241,23 @@ function formatTime(ms: number): string {
 		zeroPadded(date.getUTCSeconds(), 2),
 	];
 
-	if (date.getUTCMinutes() < 1)
+	if (date.getUTCMinutes() < 1 && date.getUTCSeconds() < 30)
 		formattedTimes.push(zeroPadded(date.getUTCMilliseconds(), 3));
+
+	if (date.getUTCHours() > 0)
+		formattedTimes.unshift(zeroPadded(date.getUTCHours(), 2));
 
 	return formattedTimes.join(":");
 }
 
-function renderLayout(players: number[], timeInMS: number): string {
+function renderLayout(
+	players: [number, "up" | "down" | "left" | "right"][],
+	timeInMS: number
+): string {
 	return /*html*/ `
 		${players
 			.map(
-				(id) => /*html*/ `
+				([id, rotation]) => /*html*/ `
 				<button class="relative flex items-center justify-center flex-1 min-w-[40%] bg-slate-300 dark:bg-slate-600 data-[active]:bg-orange-500" id="player-timer-button-${id}">
 					${
 						import.meta.env.DEV
@@ -218,7 +267,15 @@ function renderLayout(players: number[], timeInMS: number): string {
 							</span>`
 							: ""
 					}
-					<span class="font-bold text-2xl" id="player-time-display-${id}">${formatTime(
+					<span class="font-bold text-2xl font-mono ${
+						rotation === "down"
+							? "rotate-0"
+							: rotation === "up"
+							? "rotate-180"
+							: rotation === "left"
+							? "rotate-90"
+							: "-rotate-90"
+					}" id="player-time-display-${id}">${formatTime(
 					timeInMS
 				)}</span>
 				</button>
@@ -226,7 +283,4 @@ function renderLayout(players: number[], timeInMS: number): string {
 			)
 			.join("\n")}
 	`;
-}
-function arrayOfLength(length: number) {
-	return Array.from(Array(length), (_, i) => i + 1);
 }
