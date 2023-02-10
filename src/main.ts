@@ -130,15 +130,15 @@ function setActivePlayer(player: Player) {
 		})),
 		{ ...player, active: true },
 	];
-	currentPlayers.forEach((p) =>
-		p.timerButtonEl.toggleAttribute("data-active", false)
-	);
-	player.timerButtonEl.toggleAttribute("data-active", true);
 	updateTimerUI();
 }
 
 function updateTimerUI() {
 	currentPlayers.forEach((player) => {
+		player.timerButtonEl.toggleAttribute(
+			"data-active",
+			player.active
+		);
 		player.timeDisplayEl.innerText = formatTime(
 			player.timeRemaining
 		);
