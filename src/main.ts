@@ -7,6 +7,9 @@ const mainMenu = document.getElementById("main-menu") as HTMLDialogElement;
 const closeMenuButton = document.getElementById(
 	"close-button"
 ) as HTMLButtonElement;
+const pauseButton = document.getElementById(
+	"pause-button"
+) as HTMLButtonElement;
 const optionsForm = document.getElementById("game-settings") as HTMLFormElement;
 const timersContainer = document.getElementById("timers") as HTMLElement;
 
@@ -21,6 +24,8 @@ type Player = {
 };
 let currentPlayers: Player[] = [];
 let activePlayerID: number | undefined = undefined;
+
+let isPaused = false;
 
 // This layouts system means I can set it up so that the order of play goes around
 // rather than side to side and down.
@@ -55,6 +60,19 @@ optionsForm.addEventListener("submit", (ev) => {
 	mainMenu.close();
 });
 
+pauseButton.addEventListener("click", () => {
+	isPaused = !isPaused;
+	pauseButton.toggleAttribute("data-paused", isPaused);
+
+	if (isPaused) {
+		stopTicking();
+		pauseButton.setAttribute("title", "Unpause");
+	} else {
+		startTicking();
+		pauseButton.setAttribute("title", "Pause");
+	}
+});
+
 function setupGame({
 	players,
 	playerTime,
@@ -69,6 +87,12 @@ function setupGame({
 
 	// Clear tick interval
 	clearInterval(intervalID);
+
+	// Reset paused status
+	isPaused = false;
+
+	// Disable pause button
+	pauseButton.toggleAttribute("disabled", true);
 
 	const playerIDs = Array.from(Array(players), (_, i) => ({
 		id: i + 1,
@@ -104,7 +128,11 @@ function createTimerButtonClickHandler(player: Player) {
 			// so make this player the active player.
 			setActivePlayer(player);
 
-			intervalID = setInterval(handleTick, tickInterval);
+			// Start ticking
+			startTicking();
+
+			// Enable pause button
+			pauseButton.toggleAttribute("disabled", false);
 		} else if (activePlayerID === player.id) {
 			// If there is already an active timer, set the next player ID to active
 			let nextPlayerID = activePlayerID + 1;
@@ -118,6 +146,14 @@ function createTimerButtonClickHandler(player: Player) {
 			);
 		}
 	};
+}
+
+function startTicking() {
+	intervalID = setInterval(handleTick, tickInterval);
+}
+
+function stopTicking() {
+	clearInterval(intervalID);
 }
 
 function setActivePlayer(player: Player) {

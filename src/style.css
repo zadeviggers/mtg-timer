@@ -2,11 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-html {
-	box-sizing: border-box;
+#pause-button:not([data-paused]) > #pause-icon {
+	display: block;
 }
-*,
-*:before,
-*:after {
-	box-sizing: inherit;
+#pause-button[data-paused] > #pause-icon {
+	display: none;
+}
+
+#pause-button:not([data-paused]) > #play-icon {
+	display: none;
+}
+#pause-button[data-paused] > #play-icon {
+	display: block;
 }

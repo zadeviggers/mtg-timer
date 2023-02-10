@@ -18,11 +18,60 @@
 		<div
 			class="flex h-screen w-screen flex-wrap gap-1"
 			id="timers"></div>
-		<button
-			class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-teal-200 p-1 px-4 shadow-sm hover:bg-teal-300 dark:bg-teal-500 hover:dark:bg-teal-400"
-			id="menu-button">
-			Menu
-		</button>
+		<div
+			class="fixed top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 gap-2">
+			<button
+				class="rounded-full bg-teal-200 p-2 shadow-sm hover:bg-teal-300 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none dark:bg-teal-500 hover:dark:bg-teal-400"
+				id="pause-button"
+				title="Pause"
+				disabled>
+				<svg
+					id="pause-icon"
+					xmlns="http://www.w3.org/2000/svg"
+					width="24"
+					height="24"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="feather feather-pause-circle">
+					<circle cx="12" cy="12" r="10"></circle>
+					<line
+						x1="10"
+						y1="15"
+						x2="10"
+						y2="9"></line>
+					<line
+						x1="14"
+						y1="15"
+						x2="14"
+						y2="9"></line>
+				</svg>
+				<svg
+					id="play-icon"
+					xmlns="http://www.w3.org/2000/svg"
+					width="24"
+					height="24"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.4"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="feather feather-play-circle">
+					<circle cx="12" cy="12" r="10"></circle>
+					<polygon
+						points="10 8 16 12 10 16 10 8"></polygon>
+				</svg>
+			</button>
+			<button
+				class="rounded-sm bg-teal-200 p-1 px-4 shadow-sm hover:bg-teal-300 dark:bg-teal-500 hover:dark:bg-teal-400"
+				id="menu-button">
+				Menu
+			</button>
+		</div>
 		<dialog
 			class="bg-slate-300 p-4 shadow-2xl dark:bg-slate-800 sm:rounded"
 			id="main-menu">
