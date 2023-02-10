@@ -17,9 +17,9 @@ type Player = {
 	timeRemaining: number;
 	timerButtonEl: HTMLButtonElement;
 	timeDisplayEl: HTMLElement;
-	active: boolean;
 };
 let currentPlayers: Player[] = [];
+let activePlayerID: number | undefined = undefined;
 
 setupGame({ players: 4, playerTime: 600000 });
 
@@ -52,6 +52,9 @@ function setupGame({
 	players: number;
 	playerTime: number;
 }) {
+	// Also need to reset everything here
+	activePlayerID = undefined;
+
 	const playerIDs = Array.from(Array(players), (_, i) => ({
 		id: i + 1,
 		timeRemaining: playerTime,
@@ -81,7 +84,6 @@ function setupGame({
 		timeDisplayEl: document.getElementById(
 			`player-time-display-${id}`
 		) as HTMLElement,
-		active: false,
 	}));
 
 	currentPlayers.forEach((player) => {
@@ -94,22 +96,21 @@ function setupGame({
 
 function createTimerButtonClickHandler(player: Player) {
 	return () => {
-		// Get active players
-		const activePlayers = currentPlayers.filter((p) => p.active);
-
+		console.log(activePlayerID);
 		// Check if there there are no active players
-		if (activePlayers.length === 0) {
+		if (!activePlayerID) {
 			// There isn't an active timer right now,
 			// so make this player the active player.
 			setActivePlayer(player);
-		} else if (activePlayers.find((p) => p.id === player.id)) {
+		} else if (activePlayerID === player.id) {
 			// If there is already an active timer, set the next player ID to active
-			let nextPlayerID = activePlayers[0].id + 1;
-			if (nextPlayerID > currentPlayers.length)
+			let nextPlayerID = activePlayerID + 1;
+			if (nextPlayerID > currentPlayers.length) {
 				nextPlayerID = 1;
+			}
 			setActivePlayer(
 				currentPlayers.find(
-					(p) => (p.id = nextPlayerID)
+					(p) => p.id === nextPlayerID
 				)!
 			);
 		}
@@ -117,17 +118,7 @@ function createTimerButtonClickHandler(player: Player) {
 }
 
 function setActivePlayer(player: Player) {
-	console.log(`Setting current player to ${player.id}`);
-	const currentPlayersWithoutThisPlayer = currentPlayers.filter(
-		(p) => p.id !== player.id
-	);
-	currentPlayers = [
-		...currentPlayersWithoutThisPlayer.map((p) => ({
-			...p,
-			active: false,
-		})),
-		{ ...player, active: true },
-	];
+	activePlayerID = player.id;
 	updateTimerUI();
 }
 
@@ -135,7 +126,7 @@ function updateTimerUI() {
 	currentPlayers.forEach((player) => {
 		player.timerButtonEl.toggleAttribute(
 			"data-active",
-			player.active
+			activePlayerID === player.id
 		);
 		player.timeDisplayEl.innerText = formatTime(
 			player.timeRemaining
