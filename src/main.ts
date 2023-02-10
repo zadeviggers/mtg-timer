@@ -171,7 +171,14 @@ function renderLayout(players: number[], timeInMS: number): string {
 			.map(
 				(id) => /*html*/ `
 				<button class="relative flex items-center justify-center flex-1 min-w-[40%] bg-slate-300 dark:bg-slate-600 data-[active]:bg-orange-500" id="player-timer-button-${id}">
-					<span class="absolute top-0 left-0">Player ${id}</span>
+					${
+						import.meta.env.DEV
+							? /*html*/ `
+							<span class="absolute top-0 left-0">
+								Player ${id}
+							</span>`
+							: ""
+					}
 					<span class="" id="player-time-display-${id}">${formatTime(timeInMS)}</span>
 				</button>
 				`
