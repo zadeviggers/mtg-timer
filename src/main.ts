@@ -10,7 +10,8 @@ const closeMenuButton = document.getElementById(
 const optionsForm = document.getElementById("game-settings") as HTMLFormElement;
 const timersContainer = document.getElementById("timers") as HTMLElement;
 
-// let intervalID: ReturnType<typeof setInterval>;
+const tickInterval = 10; // ms
+let intervalID: ReturnType<typeof setInterval>;
 
 type Player = {
 	id: number;
@@ -52,8 +53,13 @@ function setupGame({
 	players: number;
 	playerTime: number;
 }) {
-	// Also need to reset everything here
+	// Need to reset everything here
+
+	// Clear active player ID
 	activePlayerID = undefined;
+
+	// Clear tick interval
+	clearInterval(intervalID);
 
 	const playerIDs = Array.from(Array(players), (_, i) => ({
 		id: i + 1,
@@ -102,6 +108,8 @@ function createTimerButtonClickHandler(player: Player) {
 			// There isn't an active timer right now,
 			// so make this player the active player.
 			setActivePlayer(player);
+
+			intervalID = setInterval(handleTick, tickInterval);
 		} else if (activePlayerID === player.id) {
 			// If there is already an active timer, set the next player ID to active
 			let nextPlayerID = activePlayerID + 1;
@@ -134,11 +142,30 @@ function updateTimerUI() {
 	});
 }
 
+function handleTick() {
+	const activePlayer = currentPlayers.find(
+		(p) => p.id === activePlayerID
+	)!;
+
+	activePlayer.timeRemaining -= tickInterval;
+
+	updateTimerUI();
+}
+
+function zeroPadded(toPad: number, maxDigits: number): string {
+	return toPad.toString().padStart(maxDigits, "0");
+}
+
 function formatTime(ms: number): string {
 	// Courtesy of https://stackoverflow.com/a/21294619
-	const minutes = Math.floor(ms / 60000);
-	const seconds = (ms % 60000) / 1000;
-	return `${minutes < 10 ? "0" : ""}${minutes}:${
-		seconds < 10 ? "0" : ""
-	}${seconds.toFixed(0)}`;
+	const date = new Date(ms);
+	const formattedTimes = [
+		zeroPadded(date.getUTCMinutes(), 2),
+		zeroPadded(date.getUTCSeconds(), 2),
+	];
+
+	if (date.getUTCMinutes() < 1)
+		formattedTimes.push(zeroPadded(date.getUTCMilliseconds(), 3));
+
+	return formattedTimes.join(":");
 }
