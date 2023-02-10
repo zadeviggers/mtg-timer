@@ -42,7 +42,6 @@ optionsForm.addEventListener("submit", (ev) => {
 			60 *
 			1000,
 	});
-	console.log(data);
 	mainMenu.close();
 });
 
@@ -102,7 +101,6 @@ function setupGame({
 
 function createTimerButtonClickHandler(player: Player) {
 	return () => {
-		console.log(activePlayerID);
 		// Check if there there are no active players
 		if (!activePlayerID) {
 			// There isn't an active timer right now,
