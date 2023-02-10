@@ -22,6 +22,16 @@ type Player = {
 let currentPlayers: Player[] = [];
 let activePlayerID: number | undefined = undefined;
 
+// This layouts system means I can set it up so that the order of play goes around
+// rather than side to side and down.
+const layouts: Record<number, (timeInMS: number) => string> = {
+	2: (ms) => renderLayout(arrayOfLength(2), ms),
+	3: (ms) => renderLayout(arrayOfLength(3), ms),
+	4: (ms) => renderLayout([1, 2, 4, 3], ms),
+	5: (ms) => renderLayout([1, 2, 5, 3, 4], ms),
+	6: (ms) => renderLayout([1, 2, 6, 3, 5, 4], ms),
+};
+
 setupGame({ players: 4, playerTime: 600000 });
 
 openMenuButton.addEventListener("click", () => {
@@ -65,20 +75,7 @@ function setupGame({
 		timeRemaining: playerTime,
 	}));
 
-	timersContainer.innerHTML = /*html*/ `
-		${playerIDs
-			.map(
-				({ timeRemaining, id }) => /*html*/ `
-				<button class="relative flex items-center justify-center flex-1 min-w-[40%] bg-slate-300 dark:bg-slate-600 data-[active]:bg-orange-500" id="player-timer-button-${id}">
-					<span class="absolute top-0 left-0">Player ${id}</span>
-					<span class="" id="player-time-display-${id}">${formatTime(
-					timeRemaining
-				)}</span>
-				</button>
-				`
-			)
-			.join("\n")}
-	`;
+	timersContainer.innerHTML = layouts[players](playerTime);
 
 	currentPlayers = playerIDs.map(({ id, timeRemaining }) => ({
 		id,
@@ -166,4 +163,22 @@ function formatTime(ms: number): string {
 		formattedTimes.push(zeroPadded(date.getUTCMilliseconds(), 3));
 
 	return formattedTimes.join(":");
+}
+
+function renderLayout(players: number[], timeInMS: number): string {
+	return /*html*/ `
+		${players
+			.map(
+				(id) => /*html*/ `
+				<button class="relative flex items-center justify-center flex-1 min-w-[40%] bg-slate-300 dark:bg-slate-600 data-[active]:bg-orange-500" id="player-timer-button-${id}">
+					<span class="absolute top-0 left-0">Player ${id}</span>
+					<span class="" id="player-time-display-${id}">${formatTime(timeInMS)}</span>
+				</button>
+				`
+			)
+			.join("\n")}
+	`;
+}
+function arrayOfLength(length: number) {
+	return Array.from(Array(length), (_, i) => i + 1);
 }
