@@ -304,7 +304,7 @@ function renderLayout(
 							</span>`
 							: ""
 					}
-					<span class="font-bold text-2xl font-mono ${
+					<span class="font-bold text-2xl select-none font-mono ${
 						rotation === "down"
 							? "rotate-0"
 							: rotation === "up"
