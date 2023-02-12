@@ -61,9 +61,9 @@ const layouts: Record<number, (ms: number) => string> = {
 		renderLayout(
 			[
 				[1, "left"],
+				[2, "right"],
+				[5, "left"],
 				[3, "right"],
-				[2, "left"],
-				[5, "right"],
 				[4, "down"],
 			],
 			ms
