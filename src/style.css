@@ -15,3 +15,18 @@
 #pause-button[data-paused] > #play-icon {
 	display: block;
 }
+
+#toggle-fullscreen:not([data-fullscreen]) > #maximise-icon {
+	display: block;
+}
+#toggle-fullscreen[data-fullscreen] > #maximise-icon {
+	display: none;
+}
+
+#toggle-fullscreen[data-fullscreen] > #minimise-icon {
+	display: block;
+}
+
+#toggle-fullscreen:not([data-fullscreen]) > #minimise-icon {
+	display: none;
+}

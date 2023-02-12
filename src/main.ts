@@ -10,6 +10,13 @@ const closeMenuButton = document.getElementById(
 const pauseButton = document.getElementById(
 	"pause-button"
 ) as HTMLButtonElement;
+const toggleFullscreenButton = document.getElementById(
+	"toggle-fullscreen"
+) as HTMLButtonElement;
+const toggleFullscreenButtonText = document.getElementById(
+	"toggle-fullscreen-text"
+) as HTMLElement;
+
 const optionsForm = document.getElementById("game-settings") as HTMLFormElement;
 const timersContainer = document.getElementById("timers") as HTMLElement;
 
@@ -83,6 +90,30 @@ const layouts: Record<number, (ms: number) => string> = {
 };
 
 setupGame({ players: 4, playerTime: 600000 });
+
+toggleFullscreenButton.addEventListener("click", () => {
+	if (document.fullscreenElement) {
+		// Currently in fullscreen since fullscreenElement isn't null
+		document.exitFullscreen();
+	} else {
+		document.documentElement.requestFullscreen();
+	}
+});
+
+document.addEventListener("fullscreenchange", () => {
+	// Change these based on the events, to keep in sync properly
+	if (document.fullscreenElement) {
+		// Currently in fullscreen since fullscreenElement isn't null
+		toggleFullscreenButton.toggleAttribute("data-fullscreen", true);
+		toggleFullscreenButtonText.innerText = "Exit fullscreen";
+	} else {
+		toggleFullscreenButton.toggleAttribute(
+			"data-fullscreen",
+			false
+		);
+		toggleFullscreenButtonText.innerText = "Go fullscreen";
+	}
+});
 
 openMenuButton.addEventListener("click", () => {
 	mainMenu.showModal();
