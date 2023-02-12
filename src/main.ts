@@ -37,6 +37,7 @@ let isPaused = false;
 // This layouts system means I can set it up so that the order of play goes around
 // rather than side to side and down.
 const layouts: Record<number, (ms: number) => string> = {
+	1: (ms) => renderLayout([[1, "down"]], ms),
 	2: (ms) =>
 		renderLayout(
 			[
