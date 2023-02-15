@@ -39,6 +39,9 @@ const gameState: {
 };
 let isPausedCallback: () => void;
 
+// Create a reference for the Wake Lock.
+let wakeLock: { release: () => Promise<unknown> } | undefined;
+
 const optionsForm = document.getElementById("game-settings") as HTMLFormElement;
 const timersContainer = document.getElementById("timers") as HTMLElement;
 
@@ -238,6 +241,13 @@ function setupGame({
 }) {
 	// Need to reset everything here
 
+	// Release wakelock
+	try {
+		wakeLock?.release();
+	} catch (err) {
+		console.warn(`Failed to release wakelock: ${err}`);
+	}
+
 	// Clear active player ID
 	gameState.activePlayerID = undefined;
 
@@ -292,6 +302,33 @@ function createTimerButtonClickHandler(player: Player) {
 
 			// Enable pause button
 			pauseButton.toggleAttribute("disabled", false);
+
+			// Request Wakelock
+			if ("wakeLock" in navigator) {
+				// create an async function to request a wake lock
+				try {
+					(
+						navigator.wakeLock as {
+							request: (
+								arg1: "screen"
+							) => Promise<{
+								release: () => Promise<unknown>;
+							}>;
+						}
+					)
+						.request("screen")
+						.then((w) => {
+							wakeLock = w;
+						});
+				} catch (err) {
+					// The Wake Lock request has failed - usually system related, such as battery.
+					console.warn(
+						`Wakelock request failed: ${err}`
+					);
+				}
+			} else {
+				console.warn("Wakelock not available");
+			}
 		} else if (gameState.activePlayerID === player.id) {
 			// If there is already an active timer, set the next player ID to active
 			nextPlayer();
