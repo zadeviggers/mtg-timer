@@ -1,5 +1,4 @@
 import "./style.css";
-import { teal } from "tailwindcss/colors";
 
 import { Rive } from "@rive-app/canvas";
 
