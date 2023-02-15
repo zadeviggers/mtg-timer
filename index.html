@@ -21,53 +21,19 @@
 		<div
 			class="fixed top-0 left-0 right-0 flex w-full justify-center gap-2 p-2">
 			<button
-				class="select-none rounded-full bg-teal-200 p-2 shadow-sm hover:bg-teal-300 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none dark:bg-teal-500 hover:dark:bg-teal-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-400"
+				class="select-none overflow-hidden rounded-full bg-teal-500 shadow-sm hover:bg-teal-400 disabled:bg-slate-800 disabled:shadow-none dark:disabled:text-slate-400"
 				id="pause-button"
 				title="Pause"
 				disabled>
-				<svg
-					id="pause-icon"
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="feather feather-pause-circle">
-					<circle cx="12" cy="12" r="10"></circle>
-					<line
-						x1="10"
-						y1="15"
-						x2="10"
-						y2="9"></line>
-					<line
-						x1="14"
-						y1="15"
-						x2="14"
-						y2="9"></line>
-				</svg>
-				<svg
-					id="play-icon"
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.4"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="feather feather-play-circle">
-					<circle cx="12" cy="12" r="10"></circle>
-					<polygon
-						points="10 8 16 12 10 16 10 8"></polygon>
-				</svg>
+				<canvas
+					id="pause-button-canvas"
+					style="width: 42px; height: 42px"
+					width="42"
+					height="42">
+				</canvas>
 			</button>
 			<button
-				class="select-none rounded-sm bg-teal-200 p-1 px-4 shadow-sm hover:bg-teal-300 dark:bg-teal-500 hover:dark:bg-teal-400"
+				class="select-none rounded-sm bg-teal-500 p-1 px-4 text-white shadow-sm hover:bg-teal-400"
 				id="menu-button">
 				Menu
 			</button>
@@ -85,7 +51,7 @@
 				<button
 					id="toggle-fullscreen"
 					type="button"
-					class="flex select-none items-center gap-2 rounded-sm bg-teal-200 p-1 px-4 pl-2 hover:bg-teal-300 hover:shadow-sm dark:bg-teal-500 hover:dark:bg-teal-400">
+					class="flex select-none items-center gap-2 rounded-sm bg-teal-500 p-1 px-4 pl-2 text-white hover:bg-teal-400 hover:shadow-sm">
 					<svg
 						id="maximise-icon"
 						xmlns="http://www.w3.org/2000/svg"
@@ -149,7 +115,7 @@
 						<option value="6">Six</option>
 					</select>
 				</label>
-				<div class="ml-auto flex gap-2">
+				<div class="ml-auto flex flex-wrap gap-2">
 					<button
 						id="close-button"
 						type="button"
@@ -157,7 +123,7 @@
 						Close
 					</button>
 					<button
-						class="select-none rounded-sm bg-teal-200 p-1 px-4 hover:bg-teal-300 hover:shadow-sm dark:bg-teal-500 hover:dark:bg-teal-400"
+						class="select-none rounded-sm bg-teal-500 p-1 px-4 text-white hover:bg-teal-400 hover:shadow-sm"
 						type="submit">
 						Restart with changes
 					</button>

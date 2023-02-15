@@ -1,4 +1,16 @@
 import "./style.css";
+import { teal } from "tailwindcss/colors";
+
+import { Rive } from "@rive-app/canvas";
+
+import pauseButtonRivFile from "./pause_button.riv?url";
+
+type Player = {
+	id: number;
+	timeRemaining: number;
+	timerButtonEl: HTMLButtonElement;
+	timeDisplayEl: HTMLElement;
+};
 
 const openMenuButton = document.getElementById(
 	"menu-button"
@@ -17,22 +29,22 @@ const toggleFullscreenButtonText = document.getElementById(
 	"toggle-fullscreen-text"
 ) as HTMLElement;
 
+const gameState: {
+	isPaused: boolean;
+	currentPlayers: Player[] | undefined;
+	activePlayerID: number | undefined;
+} = {
+	isPaused: false,
+	currentPlayers: [],
+	activePlayerID: undefined,
+};
+let isPausedCallback: () => void;
+
 const optionsForm = document.getElementById("game-settings") as HTMLFormElement;
 const timersContainer = document.getElementById("timers") as HTMLElement;
 
 const tickInterval = 10; // ms
 let intervalID: ReturnType<typeof setInterval>;
-
-type Player = {
-	id: number;
-	timeRemaining: number;
-	timerButtonEl: HTMLButtonElement;
-	timeDisplayEl: HTMLElement;
-};
-let currentPlayers: Player[] = [];
-let activePlayerID: number | undefined = undefined;
-
-let isPaused = false;
 
 // This layouts system means I can set it up so that the order of play goes around
 // rather than side to side and down.
@@ -135,17 +147,87 @@ optionsForm.addEventListener("submit", (ev) => {
 	mainMenu.close();
 });
 
-pauseButton.addEventListener("click", () => {
-	isPaused = !isPaused;
-	pauseButton.toggleAttribute("data-paused", isPaused);
+const pauseButtonCanvas = document.getElementById(
+	"pause-button-canvas"
+) as HTMLCanvasElement;
+const pauseButtonRive = new Rive({
+	src: pauseButtonRivFile,
+	canvas: pauseButtonCanvas,
+	stateMachines: "button",
+	autoplay: true,
+	onLoad: () => {
+		const inputs = pauseButtonRive.stateMachineInputs("button");
+		const pressStartTrigger = inputs.find(
+			(i) => i.name === "Press start"
+		);
+		const pressCancelTrigger = inputs.find(
+			(i) => i.name === "Press cancel"
+		);
+		const hoveredBoolean = inputs.find((i) => i.name === "Hovered");
+		const pausedBoolean = inputs.find((i) => i.name === "Paused");
 
-	if (isPaused) {
+		if (pausedBoolean) {
+			pausedBoolean.value = gameState.isPaused;
+
+			isPausedCallback = () => {
+				pausedBoolean.value = gameState.isPaused;
+			};
+		}
+
+		if (pressStartTrigger) {
+			pauseButton.addEventListener("pointerdown", () => {
+				if (gameState.activePlayerID) {
+					// If the game has started...
+					pressStartTrigger.fire();
+				}
+			});
+		}
+
+		if (pressCancelTrigger) {
+			// Click outside listener from https://stackoverflow.com/a/64665817
+			document.addEventListener("pointerup", (event) => {
+				// We'll let this one fire, even when the game hasn't started,
+				// in case we need to clean up from an old game.
+				const withinBoundaries = event
+					.composedPath()
+					.includes(pauseButton);
+
+				if (!withinBoundaries) {
+					pressCancelTrigger.fire();
+				}
+			});
+		}
+
+		if (hoveredBoolean) {
+			pauseButton.addEventListener("pointerenter", () => {
+				if (gameState.activePlayerID) {
+					// If the game has started...
+					hoveredBoolean.value = true;
+				}
+			});
+			pauseButton.addEventListener("pointerleave", () => {
+				if (gameState.activePlayerID) {
+					// If the game has started...
+					hoveredBoolean.value = false;
+				}
+			});
+		}
+	},
+});
+
+pauseButton.addEventListener("click", () => {
+	gameState.isPaused = !gameState.isPaused;
+	// pauseButton.toggleAttribute("data-paused", isPaused);
+
+	if (gameState.isPaused) {
 		stopTicking();
 		pauseButton.setAttribute("title", "Unpause");
 	} else {
 		startTicking();
 		pauseButton.setAttribute("title", "Pause");
 	}
+
+	isPausedCallback?.();
 });
 
 function setupGame({
@@ -158,13 +240,13 @@ function setupGame({
 	// Need to reset everything here
 
 	// Clear active player ID
-	activePlayerID = undefined;
+	gameState.activePlayerID = undefined;
 
 	// Clear tick interval
 	clearInterval(intervalID);
 
 	// Reset paused status
-	isPaused = false;
+	gameState.isPaused = false;
 
 	// Disable pause button
 	pauseButton.toggleAttribute("disabled", true);
@@ -176,7 +258,7 @@ function setupGame({
 
 	timersContainer.innerHTML = layouts[players](playerTime);
 
-	currentPlayers = playerIDs.map(({ id, timeRemaining }) => ({
+	gameState.currentPlayers = playerIDs.map(({ id, timeRemaining }) => ({
 		id,
 		timeRemaining,
 		timerButtonEl: document.getElementById(
@@ -187,7 +269,7 @@ function setupGame({
 		) as HTMLElement,
 	}));
 
-	currentPlayers.forEach((player) => {
+	gameState.currentPlayers.forEach((player) => {
 		player.timerButtonEl.addEventListener(
 			"click",
 			createTimerButtonClickHandler(player)
@@ -198,10 +280,10 @@ function setupGame({
 function createTimerButtonClickHandler(player: Player) {
 	return () => {
 		// Don't switch turns when paused
-		if (isPaused) return;
+		if (gameState.isPaused) return;
 
 		// Check if there there are no active players
-		if (!activePlayerID) {
+		if (!gameState.activePlayerID) {
 			// There isn't an active timer right now,
 			// so make this player the active player.
 			setActivePlayer(player);
@@ -211,7 +293,7 @@ function createTimerButtonClickHandler(player: Player) {
 
 			// Enable pause button
 			pauseButton.toggleAttribute("disabled", false);
-		} else if (activePlayerID === player.id) {
+		} else if (gameState.activePlayerID === player.id) {
 			// If there is already an active timer, set the next player ID to active
 			nextPlayer();
 		}
@@ -219,12 +301,23 @@ function createTimerButtonClickHandler(player: Player) {
 }
 
 function nextPlayer() {
-	let nextPlayerID = (activePlayerID || 0) + 1;
-	if (nextPlayerID > currentPlayers.length) {
-		const sorted = [...currentPlayers].sort((a, b) => a.id - b.id);
+	if (!gameState.currentPlayers) {
+		console.warn(
+			"`nextPlayer` called without currentPlayers being set"
+		);
+		return;
+	}
+
+	let nextPlayerID = (gameState.activePlayerID || 0) + 1;
+	if (nextPlayerID > gameState.currentPlayers.length) {
+		const sorted = [...gameState.currentPlayers].sort(
+			(a, b) => a.id - b.id
+		);
 		nextPlayerID = sorted[0].id;
 	}
-	setActivePlayer(currentPlayers.find((p) => p.id === nextPlayerID)!);
+	setActivePlayer(
+		gameState.currentPlayers.find((p) => p.id === nextPlayerID)!
+	);
 }
 
 function startTicking() {
@@ -236,15 +329,22 @@ function stopTicking() {
 }
 
 function setActivePlayer(player: Player) {
-	activePlayerID = player.id;
+	gameState.activePlayerID = player.id;
 	updateTimerUI();
 }
 
 function updateTimerUI() {
-	currentPlayers.forEach((player) => {
+	if (!gameState.currentPlayers) {
+		console.warn(
+			"`updateTimerUI` called without currentPlayers being set"
+		);
+		return;
+	}
+
+	gameState.currentPlayers.forEach((player) => {
 		player.timerButtonEl.toggleAttribute(
 			"data-active",
-			activePlayerID === player.id
+			gameState.activePlayerID === player.id
 		);
 		player.timeDisplayEl.innerText = formatTime(
 			player.timeRemaining
@@ -253,8 +353,15 @@ function updateTimerUI() {
 }
 
 function handleTick() {
-	const activePlayer = currentPlayers.find(
-		(p) => p.id === activePlayerID
+	if (!gameState.currentPlayers) {
+		console.warn(
+			"`handleTick` called without currentPlayers being set"
+		);
+		return;
+	}
+
+	const activePlayer = gameState.currentPlayers.find(
+		(p) => p.id === gameState.activePlayerID
 	)!;
 
 	if (activePlayer.timeRemaining <= 0) {
