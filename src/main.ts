@@ -9,6 +9,8 @@ type Player = {
 	timeRemaining: number;
 	timerButtonEl: HTMLButtonElement;
 	timeDisplayEl: HTMLElement;
+	koButtonEl: HTMLElement;
+	out: boolean;
 };
 
 const openMenuButton = document.getElementById(
@@ -32,12 +34,21 @@ const gameState: {
 	isPaused: boolean;
 	currentPlayers: Player[] | undefined;
 	activePlayerID: number | undefined;
+	activePlayer: Player | undefined;
 } = {
 	isPaused: false,
 	currentPlayers: [],
 	activePlayerID: undefined,
+	get activePlayer() {
+		if (this.activePlayerID === undefined) return undefined;
+		return getPlayerByID(this.activePlayerID)!;
+	},
 };
 let isPausedCallback: () => void;
+
+function getPlayerByID(id: number): Player | undefined {
+	return (gameState.currentPlayers || []).find((p) => p.id === id);
+}
 
 // Create a reference for the Wake Lock.
 let wakeLock: { release: () => Promise<unknown> } | undefined;
@@ -276,6 +287,12 @@ function setupGame({
 		timeDisplayEl: document.getElementById(
 			`player-time-display-${id}`
 		) as HTMLElement,
+		koButtonEl: document.getElementById(
+			`player-ko-button-${id}`
+		) as HTMLButtonElement,
+		get out() {
+			return this.timeRemaining <= 0;
+		},
 	}));
 
 	gameState.currentPlayers.forEach((player) => {
@@ -283,7 +300,53 @@ function setupGame({
 			"click",
 			createTimerButtonClickHandler(player)
 		);
+		player.koButtonEl.addEventListener(
+			"click",
+			createHandleKO(player)
+		);
 	});
+}
+
+function createHandleKO(player: Player) {
+	return (e: MouseEvent) => {
+		// Make sure it doesn't start the main timer
+		e.preventDefault();
+		e.stopPropagation();
+
+		// Make sure they didn't press the KO button by accident
+		if (
+			!confirm(
+				`Are you sure you want to knock out player ${player.id}?`
+			)
+		)
+			return;
+
+		// Save the time among the other players
+		const timeToDistribute = player.timeRemaining;
+
+		// Knock out the player
+		player.timeRemaining = 0;
+
+		// Distribute the time to other players
+		const playersToDistributeAmongst =
+			gameState.currentPlayers?.filter(
+				(player) => !player.out
+			) || [];
+
+		if (playersToDistributeAmongst.length === 0) return;
+
+		// Calculate amount to distribute
+		const amountPerPlayer =
+			timeToDistribute / playersToDistributeAmongst.length;
+
+		// Share out the time
+		playersToDistributeAmongst.forEach(
+			(player) => (player.timeRemaining += amountPerPlayer)
+		);
+
+		// Update the UI
+		updateTimerUI();
+	};
 }
 
 function createTimerButtonClickHandler(player: Player) {
@@ -351,9 +414,7 @@ function nextPlayer() {
 		);
 		nextPlayerID = sorted[0].id;
 	}
-	setActivePlayer(
-		gameState.currentPlayers.find((p) => p.id === nextPlayerID)!
-	);
+	setActivePlayer(getPlayerByID(nextPlayerID)!);
 }
 
 function startTicking() {
@@ -396,16 +457,12 @@ function handleTick() {
 		return;
 	}
 
-	const activePlayer = gameState.currentPlayers.find(
-		(p) => p.id === gameState.activePlayerID
-	)!;
-
-	if (activePlayer.timeRemaining <= 0) {
+	if (gameState.activePlayer!.out) {
 		nextPlayer();
 		return;
 	}
 
-	activePlayer.timeRemaining -= tickInterval;
+	gameState.activePlayer!.timeRemaining -= tickInterval;
 
 	updateTimerUI();
 }
@@ -439,7 +496,12 @@ function renderLayout(
 		${timers
 			.map(
 				([id, rotation]) => /*html*/ `
-				<button class="relative flex items-center justify-center flex-1 min-w-[40%] bg-slate-300 dark:bg-slate-600 data-[active]:bg-orange-500" id="player-timer-button-${id}">
+				<div
+					class="relative flex items-center justify-center flex-1 min-w-[40%] bg-slate-300 dark:bg-slate-600 data-[active]:bg-orange-500 cursor-pointer"
+					id="player-timer-button-${id}"
+					data-player="${id}"
+					aria-role="button"
+				>
 					${
 						import.meta.env.DEV
 							? /*html*/ `
@@ -459,7 +521,23 @@ function renderLayout(
 					}" id="player-time-display-${id}">
 						${formatTime(ms)}
 					</span>
-				</button>
+					<button
+						data-ko="${id}"
+						id="player-ko-button-${id}"
+						class="p-4 bg-teal-500 text-white dark:bg-slate-800 absolute ${
+							rotation === "down"
+								? "bottom-0 left-0"
+								: rotation ===
+								  "up"
+								? "top-0 left-0"
+								: rotation ===
+								  "left"
+								? "bottom-0 left-0"
+								: "bottom-0 right-0"
+						}"
+						title="Knock out player ${id}"
+					>KO</button>
+				</div>
 				`
 			)
 			.join("\n")}
