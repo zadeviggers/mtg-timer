@@ -14,40 +14,44 @@ type Player = {
 };
 
 const openMenuButton = document.getElementById(
-	"menu-button"
+	"menu-button",
 ) as HTMLButtonElement;
 const mainMenu = document.getElementById("main-menu") as HTMLDialogElement;
 const closeMenuButton = document.getElementById(
-	"close-button"
+	"close-button",
 ) as HTMLButtonElement;
 const pauseButton = document.getElementById(
-	"pause-button"
+	"pause-button",
 ) as HTMLButtonElement;
 const toggleFullscreenButton = document.getElementById(
-	"toggle-fullscreen"
+	"toggle-fullscreen",
 ) as HTMLButtonElement;
 const toggleFullscreenButtonText = document.getElementById(
-	"toggle-fullscreen-text"
+	"toggle-fullscreen-text",
 ) as HTMLElement;
 
 const gameState: {
 	isPaused: boolean;
-	currentPlayers: Player[] | undefined;
-	activePlayerID: number | undefined;
-	activePlayer: Player | undefined;
+	currentPlayers: Player[] | null;
+	activePlayerID: number | null;
+	activePlayer: Player | null;
 } = {
 	isPaused: false,
 	currentPlayers: [],
-	activePlayerID: undefined,
-	get activePlayer() {
-		if (this.activePlayerID === undefined) return undefined;
+	activePlayerID: null,
+	get activePlayer(): Player | null {
+		if (this.activePlayerID === null) return null;
 		return getPlayerByID(this.activePlayerID)!;
 	},
 };
-let isPausedCallback: () => void;
+let updatePauseButtonVisual = () => {
+	console.warn(
+		"updatePauseButtonVisual called before being set to new thing",
+	);
+};
 
-function getPlayerByID(id: number): Player | undefined {
-	return (gameState.currentPlayers || []).find((p) => p.id === id);
+function getPlayerByID(id: number | null): Player | null {
+	return (gameState.currentPlayers ?? []).find((p) => p.id === id) ?? null;
 }
 
 // Create a reference for the Wake Lock.
@@ -69,7 +73,7 @@ const layouts: Record<number, (ms: number) => string> = {
 				[1, "left"],
 				[2, "right"],
 			],
-			ms
+			ms,
 		),
 	3: (ms) =>
 		renderLayout(
@@ -78,7 +82,7 @@ const layouts: Record<number, (ms: number) => string> = {
 				[2, "right"],
 				[3, "down"],
 			],
-			ms
+			ms,
 		),
 	4: (ms) =>
 		renderLayout(
@@ -88,7 +92,7 @@ const layouts: Record<number, (ms: number) => string> = {
 				[4, "left"],
 				[3, "right"],
 			],
-			ms
+			ms,
 		),
 	5: (ms) =>
 		renderLayout(
@@ -99,7 +103,7 @@ const layouts: Record<number, (ms: number) => string> = {
 				[3, "right"],
 				[4, "down"],
 			],
-			ms
+			ms,
 		),
 	6: (ms) =>
 		renderLayout(
@@ -111,7 +115,7 @@ const layouts: Record<number, (ms: number) => string> = {
 				[5, "left"],
 				[4, "right"],
 			],
-			ms
+			ms,
 		),
 };
 
@@ -132,11 +136,13 @@ document.addEventListener("fullscreenchange", () => {
 		// Currently in fullscreen since fullscreenElement isn't null
 		toggleFullscreenButton.toggleAttribute("data-fullscreen", true);
 		toggleFullscreenButtonText.innerText = "Exit fullscreen";
+
+		// Bring modal back to front to handle chrome and safari badness
+		if (mainMenu.open) {
+			mainMenu.showModal();
+		}
 	} else {
-		toggleFullscreenButton.toggleAttribute(
-			"data-fullscreen",
-			false
-		);
+		toggleFullscreenButton.toggleAttribute("data-fullscreen", false);
 		toggleFullscreenButtonText.innerText = "Go fullscreen";
 	}
 });
@@ -154,14 +160,13 @@ optionsForm.addEventListener("submit", (ev) => {
 	const data = new FormData(optionsForm);
 	setupGame({
 		players: Number.parseInt(data.get("player-count")! as string),
-		playerTime:
-			Number(data.get("turn-time")! as string) * 60 * 1000,
+		playerTime: Number(data.get("turn-time")! as string) * 60 * 1000,
 	});
 	mainMenu.close();
 });
 
 const pauseButtonCanvas = document.getElementById(
-	"pause-button-canvas"
+	"pause-button-canvas",
 ) as HTMLCanvasElement;
 const pauseButtonRive = new Rive({
 	src: pauseButtonRivFile,
@@ -170,11 +175,9 @@ const pauseButtonRive = new Rive({
 	autoplay: true,
 	onLoad: () => {
 		const inputs = pauseButtonRive.stateMachineInputs("button");
-		const pressStartTrigger = inputs.find(
-			(i) => i.name === "Press start"
-		);
+		const pressStartTrigger = inputs.find((i) => i.name === "Press start");
 		const pressCancelTrigger = inputs.find(
-			(i) => i.name === "Press cancel"
+			(i) => i.name === "Press cancel",
 		);
 		const hoveredBoolean = inputs.find((i) => i.name === "Hovered");
 		const pausedBoolean = inputs.find((i) => i.name === "Paused");
@@ -182,7 +185,7 @@ const pauseButtonRive = new Rive({
 		if (pausedBoolean) {
 			pausedBoolean.value = gameState.isPaused;
 
-			isPausedCallback = () => {
+			updatePauseButtonVisual = () => {
 				pausedBoolean.value = gameState.isPaused;
 			};
 		}
@@ -228,19 +231,31 @@ const pauseButtonRive = new Rive({
 	},
 });
 
+function pause() {
+	gameState.isPaused = true;
+	stopTicking();
+	pauseButton.setAttribute("title", "Pause");
+	pauseButton.toggleAttribute("disabled", false);
+
+	updatePauseButtonVisual();
+}
+
+function unpause() {
+	gameState.isPaused = false;
+	startTicking();
+	pauseButton.setAttribute("title", "Unpause");
+	pauseButton.toggleAttribute("disabled", false);
+
+	updatePauseButtonVisual();
+}
+
 pauseButton.addEventListener("click", () => {
-	gameState.isPaused = !gameState.isPaused;
-	// pauseButton.toggleAttribute("data-paused", isPaused);
-
+	console.log("isPaused:", gameState.isPaused);
 	if (gameState.isPaused) {
-		stopTicking();
-		pauseButton.setAttribute("title", "Unpause");
+		unpause();
 	} else {
-		startTicking();
-		pauseButton.setAttribute("title", "Pause");
+		pause();
 	}
-
-	isPausedCallback?.();
 });
 
 function setupGame({
@@ -260,16 +275,20 @@ function setupGame({
 	}
 
 	// Clear active player ID
-	gameState.activePlayerID = undefined;
+	setActivePlayer(null);
 
-	// Clear tick interval
-	clearInterval(intervalID);
-
-	// Reset paused status
-	gameState.isPaused = false;
+	// 'Pause' to reset stuff
+	pause();
 
 	// Disable pause button
 	pauseButton.toggleAttribute("disabled", true);
+
+	// Reset positioning
+	if (players < 2) {
+		pauseButton.setAttribute("style", "top:initial;bottom:10px");
+	} else {
+		pauseButton.removeAttribute("style");
+	}
 
 	const playerIDs = Array.from(Array(players), (_, i) => ({
 		id: i + 1,
@@ -282,13 +301,13 @@ function setupGame({
 		id,
 		timeRemaining,
 		timerButtonEl: document.getElementById(
-			`player-timer-button-${id}`
+			`player-timer-button-${id}`,
 		) as HTMLButtonElement,
 		timeDisplayEl: document.getElementById(
-			`player-time-display-${id}`
+			`player-time-display-${id}`,
 		) as HTMLElement,
 		koButtonEl: document.getElementById(
-			`player-ko-button-${id}`
+			`player-ko-button-${id}`,
 		) as HTMLButtonElement,
 		get out() {
 			return this.timeRemaining <= 0;
@@ -298,13 +317,13 @@ function setupGame({
 	gameState.currentPlayers.forEach((player) => {
 		player.timerButtonEl.addEventListener(
 			"click",
-			createTimerButtonClickHandler(player)
+			createTimerButtonClickHandler(player),
 		);
-		player.koButtonEl.addEventListener(
-			"click",
-			createHandleKO(player)
-		);
+		player.koButtonEl.addEventListener("click", createHandleKO(player));
 	});
+
+	// Keep the pause button sync'd
+	updatePauseButtonVisual();
 }
 
 function createHandleKO(player: Player) {
@@ -314,11 +333,7 @@ function createHandleKO(player: Player) {
 		e.stopPropagation();
 
 		// Make sure they didn't press the KO button by accident
-		if (
-			!confirm(
-				`Are you sure you want to knock out player ${player.id}?`
-			)
-		)
+		if (!confirm(`Are you sure you want to knock out player ${player.id}?`))
 			return;
 
 		// Save the time among the other players
@@ -329,9 +344,7 @@ function createHandleKO(player: Player) {
 
 		// Distribute the time to other players
 		const playersToDistributeAmongst =
-			gameState.currentPlayers?.filter(
-				(player) => !player.out
-			) || [];
+			gameState.currentPlayers?.filter((player) => !player.out) ?? [];
 
 		if (playersToDistributeAmongst.length === 0) return;
 
@@ -341,7 +354,7 @@ function createHandleKO(player: Player) {
 
 		// Share out the time
 		playersToDistributeAmongst.forEach(
-			(player) => (player.timeRemaining += amountPerPlayer)
+			(player) => (player.timeRemaining += amountPerPlayer),
 		);
 
 		// Update the UI
@@ -351,20 +364,14 @@ function createHandleKO(player: Player) {
 
 function createTimerButtonClickHandler(player: Player) {
 	return () => {
-		// Don't switch turns when paused
-		if (gameState.isPaused) return;
-
 		// Check if there there are no active players
-		if (!gameState.activePlayerID) {
+		if (gameState.activePlayerID == null) {
 			// There isn't an active timer right now,
 			// so make this player the active player.
 			setActivePlayer(player);
 
 			// Start ticking
-			startTicking();
-
-			// Enable pause button
-			pauseButton.toggleAttribute("disabled", false);
+			unpause();
 
 			// Request Wakelock
 			if ("wakeLock" in navigator) {
@@ -372,9 +379,7 @@ function createTimerButtonClickHandler(player: Player) {
 				try {
 					(
 						navigator.wakeLock as {
-							request: (
-								arg1: "screen"
-							) => Promise<{
+							request: (arg1: "screen") => Promise<{
 								release: () => Promise<unknown>;
 							}>;
 						}
@@ -385,9 +390,7 @@ function createTimerButtonClickHandler(player: Player) {
 						});
 				} catch (err) {
 					// The Wake Lock request has failed - usually system related, such as battery.
-					console.warn(
-						`Wakelock request failed: ${err}`
-					);
+					console.warn(`Wakelock request failed: ${err}`);
 				}
 			} else {
 				console.warn("Wakelock not available");
@@ -401,16 +404,22 @@ function createTimerButtonClickHandler(player: Player) {
 
 function nextPlayer() {
 	if (!gameState.currentPlayers) {
-		console.warn(
-			"`nextPlayer` called without currentPlayers being set"
-		);
+		console.warn("`nextPlayer` called without currentPlayers being set");
 		return;
 	}
 
-	let nextPlayerID = (gameState.activePlayerID || 0) + 1;
+	if (allPlayersOut()) {
+		pause();
+		setActivePlayer(null);
+		wakeLock?.release();
+		pauseButton.toggleAttribute("disabled", true);
+		return;
+	}
+
+	let nextPlayerID = (gameState.activePlayerID ?? 0) + 1;
 	if (nextPlayerID > gameState.currentPlayers.length) {
 		const sorted = [...gameState.currentPlayers].sort(
-			(a, b) => a.id - b.id
+			(a, b) => a.id - b.id,
 		);
 		nextPlayerID = sorted[0].id;
 	}
@@ -418,6 +427,9 @@ function nextPlayer() {
 }
 
 function startTicking() {
+	// Avoid double intervals
+	stopTicking();
+
 	intervalID = setInterval(handleTick, tickInterval);
 }
 
@@ -425,44 +437,39 @@ function stopTicking() {
 	clearInterval(intervalID);
 }
 
-function setActivePlayer(player: Player) {
-	gameState.activePlayerID = player.id;
+function setActivePlayer(player: Player | null) {
+	gameState.activePlayerID = player?.id ?? null;
 	updateTimerUI();
 }
 
 function updateTimerUI() {
-	if (!gameState.currentPlayers) {
-		console.warn(
-			"`updateTimerUI` called without currentPlayers being set"
-		);
-		return;
-	}
+	console.log("updatetimeui");
 
-	gameState.currentPlayers.forEach((player) => {
+	(gameState.currentPlayers ?? []).forEach((player) => {
 		player.timerButtonEl.toggleAttribute(
 			"data-active",
-			gameState.activePlayerID === player.id
+			gameState.activePlayerID === player.id,
 		);
-		player.timeDisplayEl.innerText = formatTime(
-			player.timeRemaining
-		);
+		player.timeDisplayEl.innerText = formatTime(player.timeRemaining);
 	});
+}
+
+function allPlayersOut(): boolean {
+	return (gameState.currentPlayers ?? []).findIndex((p) => !p.out) == -1;
 }
 
 function handleTick() {
 	if (!gameState.currentPlayers) {
-		console.warn(
-			"`handleTick` called without currentPlayers being set"
-		);
+		console.warn("`handleTick` called without currentPlayers being set");
 		return;
 	}
 
-	if (gameState.activePlayer!.out) {
+	if (gameState.activePlayer?.out) {
 		nextPlayer();
-		return;
+	} else {
+		if (gameState.activePlayer)
+			gameState.activePlayer.timeRemaining -= tickInterval;
 	}
-
-	gameState.activePlayer!.timeRemaining -= tickInterval;
 
 	updateTimerUI();
 }
@@ -490,7 +497,7 @@ function formatTime(ms: number): string {
 
 function renderLayout(
 	timers: [number, "up" | "down" | "left" | "right"][],
-	ms: number
+	ms: number,
 ): string {
 	return /*html*/ `
 		${timers
@@ -527,18 +534,16 @@ function renderLayout(
 						class="p-4 bg-teal-500 text-white dark:bg-slate-800 absolute ${
 							rotation === "down"
 								? "bottom-0 left-0"
-								: rotation ===
-								  "up"
+								: rotation === "up"
 								? "top-0 left-0"
-								: rotation ===
-								  "left"
+								: rotation === "left"
 								? "bottom-0 left-0"
 								: "bottom-0 right-0"
 						}"
 						title="Knock out player ${id}"
 					>KO</button>
 				</div>
-				`
+				`,
 			)
 			.join("\n")}
 	`;
