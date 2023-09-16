@@ -137,8 +137,11 @@ document.addEventListener("fullscreenchange", () => {
 		toggleFullscreenButton.toggleAttribute("data-fullscreen", true);
 		toggleFullscreenButtonText.innerText = "Exit fullscreen";
 
-		// Bring modal back to front to handle chrome and safari badness
 		if (mainMenu.open) {
+			// Bring modal back to front to handle chrome and safari badness
+
+			// Have to close it first to be able to reopen
+			mainMenu.close();
 			mainMenu.showModal();
 		}
 	} else {
@@ -250,7 +253,6 @@ function unpause() {
 }
 
 pauseButton.addEventListener("click", () => {
-	console.log("isPaused:", gameState.isPaused);
 	if (gameState.isPaused) {
 		unpause();
 	} else {
@@ -443,8 +445,6 @@ function setActivePlayer(player: Player | null) {
 }
 
 function updateTimerUI() {
-	console.log("updatetimeui");
-
 	(gameState.currentPlayers ?? []).forEach((player) => {
 		player.timerButtonEl.toggleAttribute(
 			"data-active",
